@@ -1,0 +1,9 @@
+# Godot 4+ specific ignores
+.godot/
+/android/
+
+# Ignore Jetbrains IDE project files
+.idea/
+
+# MacOS files
+.DS_Store
