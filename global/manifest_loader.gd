@@ -66,7 +66,7 @@ func _ready() -> void:
 #
 # {
 #   "collection": "Noisebridge 1v1 Arcade Table",
-#   "directory": "C:\\Users\\noise\\Documents\\Games",
+#   "directory": "C:\\Users\\noise\\Documents\\GameLibrary",
 #   "games": [
 #     {
 #       "game": "CamelCaseGameName",
