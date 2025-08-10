@@ -1,12 +1,32 @@
-[gd_scene load_steps=2 format=3 uid="uid://cmijftuchxf62"]
+[gd_scene load_steps=3 format=3 uid="uid://cmijftuchxf62"]
 
 [ext_resource type="Script" uid="uid://cnw80skrxjv77" path="res://scenes/main.gd" id="1_0pxjd"]
+[ext_resource type="Theme" uid="uid://0y1n83r4ol3" path="res://themes/main.tres" id="2_0wfyh"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1_0pxjd")
 
+[node name="ErrorDialog" type="AcceptDialog" parent="."]
+title = "Error!"
+
 [node name="Background" type="ColorRect" parent="."]
 z_index = -10
-offset_right = 1024.0
-offset_bottom = 576.0
+offset_right = 2560.0
+offset_bottom = 1440.0
 color = Color(0, 0, 0, 1)
+
+[node name="TextP1" type="RichTextLabel" parent="."]
+offset_left = 1180.0
+offset_top = 100.0
+offset_right = 2420.0
+offset_bottom = 1180.0
+rotation = 1.57079
+theme = ExtResource("2_0wfyh")
+
+[node name="TextP2" type="RichTextLabel" parent="."]
+offset_left = 1380.0
+offset_top = 1337.0
+offset_right = 2620.0
+offset_bottom = 2417.0
+rotation = -1.5708
+theme = ExtResource("2_0wfyh")
