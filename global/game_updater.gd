@@ -119,11 +119,11 @@ func _full_headers(custom: Array) -> PackedStringArray:
 # Get JSON from URL with headers
 # Returns parsed JSON data or null on error
 func _get_json(url: String, headers: Array) -> Variant:
-	var err := http.request(url, _full_headers(headers))
+	var err := get_http().request(url, _full_headers(headers))
 	if err != OK:
 		error( "HTTP request failed with error %d for URL: %s headers: %s" % [err, url, headers])
 		return null
-	var result                          = await http.request_completed
+	var result                          = await get_http().request_completed
 	var resp_code: int                  = result[1]
 	var resp_headers: PackedStringArray = result[2]
 	var resp_body: PackedByteArray      = result[3]
@@ -137,11 +137,11 @@ func _get_json(url: String, headers: Array) -> Variant:
 # Returns true on success, false on error
 # Note: this will overwrite existing files at `to_path`
 func _download_file(url: String, to_path: String, headers: Array) -> bool:
-	http.download_file = to_path
-	var result                          = await http.request_completed
+	get_http().download_file = to_path
+	var result                          = await get_http().request_completed
 	var resp_code: int                  = result[1]
 	var resp_headers: PackedStringArray = result[2]
-	http.download_file = ""
+	get_http().download_file = ""
 	if resp_code >= 200 and resp_code < 300:
 		return true
 	error("HTTP request failed with code %d headers %s for URL: %s headers: %s" % [resp_code, resp_headers, url, headers])

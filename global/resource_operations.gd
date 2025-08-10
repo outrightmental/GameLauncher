@@ -1,16 +1,18 @@
 ﻿class_name ResourceOperations
 extends Node
 
-var http: HTTPRequest
+var _http: HTTPRequest
 var errors: Array[String] = []
 var warnings: Array[String] = []
 
 
 # Create an HTTP request node and connect its completion signal.
-func _ready() -> void:
-	http = HTTPRequest.new()
-	http.timeout = 60.0
-	add_child(http)
+func get_http() -> HTTPRequest:
+	if not _http:
+		_http = HTTPRequest.new()
+		_http.timeout = 60.0
+		add_child(_http)
+	return _http
 
 
 # Returns a string of all error messages, separated by newlines.

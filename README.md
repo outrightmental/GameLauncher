@@ -18,7 +18,7 @@ Download the [latest release](releases/latest) and save **GameLauncher.exe** in 
 
 If you want the Game Launcher to start automatically when you log in to your computer, you can add **GameLauncher.exe** to your startup applications.
 
-### Game Library Manifset JSON file
+### Game Library Manifest JSON file
 
 You'll need to create a **games.json** file in the **Game Library Folder**. This file contains the list of games that will be displayed in the Game Launcher.
 
