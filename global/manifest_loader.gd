@@ -1,25 +1,54 @@
-extends Node
+extends ResourceOperations
 
+#
+# -----------------------------------------------------------
+# Game Library Manifest
+# -----------------------------------------------------------
+# This is a global autoload that loads a games.json manifest file
+# from the executable folder. It provides methods to access
+# the collection name, directory path, and game entries.
+# - manifest is expected to be a JSON object with a specific structure.
+# - manifest is loaded when the node is ready
+# - `manifest_loaded` signal is emitted when the manifest is successfully loaded.
+# - If the manifest fails to load, an error is printed to the console.
+#
+
+# Signal emitted when the manifest is successfully loaded.
 signal manifest_loaded(manifest: Dictionary)
-var manifest: Dictionary  = {}
-var manifest_path: String
-var errors: Array[String] = []
+# Manifest data storage
+var manifest: GameLibraryManifest
 
 
-# Returns a string of all error messages, separated by newlines.
-func get_error_messages() -> String:
-	var error_messages: String = ""
-	for err in errors:
-		error_messages += err + "\n"
-	return error_messages.strip_edges()
+# -----------------------------------------------------------
+# Game Library Manifest Type
+# -----------------------------------------------------------
+class GameLibraryManifest:
+	var collection: String = ""
+	var directory: String = ""
+	var games: Array[GameEntry] = []
 
 
-# Returns true if there are any errors recorded.
-func has_errors() -> bool:
-	return errors.size() > 0
+# -----------------------------------------------------------
+# Game Library Manifest Entry
+# -----------------------------------------------------------
+class GameEntry:
+	var game: String = ""
+	var title: String = ""
+	var executable: String = ""
+	var developers: Array[String] = []
+	var genres: Array[String] = []
+	var players: int = 2
+	var description := ""
+	var repo_owner := ""
+	var repo_name := ""
 
 
-# Load a manifest.json file from the executable folder or res://
+# Load the manifest when the node is ready
+func _ready() -> void:
+	_load_manifest()
+
+
+# Load a games.json file from the executable folder
 # Emits `manifest_loaded` signal on success, or `_error` on failure.
 # The manifest should be a JSON object with the following structure:
 #
@@ -31,11 +60,11 @@ func has_errors() -> bool:
 #       "game": "CamelCaseGameName",
 #       "title": "Title of the Game",
 #       "executable": "GameExecutable.exe",
-#       "developer": [
+#       "developers": [
 #         "Person1",
 #         ...
 #       ],
-#       "genre": [
+#       "genres": [
 #         "Genre1",
 #         ...
 #       ],
@@ -48,44 +77,19 @@ func has_errors() -> bool:
 #   ]
 # }
 # 
-func _ready() -> void:
-	# Prefer a manifest next to the executable (for packaged builds),
-	# fall back to project folder during development.
-	var exe_dir  := OS.get_executable_path().get_base_dir()
-	var external := exe_dir.path_join(Config.MANIFEST_EXTERNAL_PATH)
-	var internal =  Config.MANIFEST_INTERNAL_PATH
-
-	if FileAccess.file_exists(external):
-		print("Using external manifest at: ", external)
-		manifest_path = external
-	elif FileAccess.file_exists(internal):
-		print("Using internal manifest at: ", internal)
-		manifest_path = internal
-	else:
-		_error("manifest.json not found (looked in executable folder and res://).")
-		return
-
-	_load_manifest()
-
-
-func reload() -> void:
-	if manifest_path == "":
-		_error("No manifest path set to reload.")
-		return
-	_load_manifest()
-
-
 func _load_manifest() -> void:
+	var exe_dir               := OS.get_executable_path().get_base_dir()
+	var manifest_path: String =  exe_dir.path_join(Config.MANIFEST_EXTERNAL_PATH)
 	var text: String
 	var f: FileAccess
-	var is_res := manifest_path.begins_with("res://")
+	var is_res                := manifest_path.begins_with("res://")
 
 	# Use appropriate access (RESOURCES for res://, READ for external)
 	var mode := FileAccess.ModeFlags.READ if is_res else FileAccess.ModeFlags.READ
 	f = FileAccess.open(manifest_path, mode)
 
 	if f == null:
-		_error("Unable to open %s: %s" % [manifest_path, FileAccess.get_open_error()])
+		error("Unable to open %s: %s" % [manifest_path, FileAccess.get_open_error()])
 		return
 
 	text = f.get_as_text()
@@ -102,29 +106,57 @@ func _load_manifest() -> void:
 	var required_top := ["collection", "directory", "games"]
 	for k in required_top:
 		if not data.has(k):
-			_error("Missing required top-level key: %s" % k)
+			error("Missing required top-level key: %s" % k)
 			return
 
 	if typeof(data["games"]) != TYPE_ARRAY:
-		_error("`games` must be an array.")
+		error("`games` must be an array.")
 		return
 
 	# Optionally validate game entries minimal fields
 	for i in data["games"].size():
 		var g = data["games"][i]
 		if typeof(g) != TYPE_DICTIONARY:
-			_error("games[%d] must be an object." % i)
+			error("games[%d] must be an object." % i)
 			return
 		for req in ["game", "title", "executable"]:
 			if not g.has(req):
-				_error("games[%d] missing required key: %s" % [i, req])
+				error("games[%d] missing required key: %s" % [i, req])
 				return
 
 	manifest = data
 	manifest_loaded.emit( manifest)
 
 
-# Helper function to log errors
-func _error(message: String) -> void:
-	errors.append(message)
-	push_error("[ManifestLoader] %s" % message)
+# Get the collection name from the manifest.
+# Return a copy to avoid accidental modification
+func get_collection_name() -> String:
+	if not manifest.has("collection"):
+		return ""
+	return manifest["collection"].duplicate(true)
+
+
+# Get the directory path from the manifest.
+# Return a copy to avoid accidental modification
+func get_directory_path() -> String:
+	if not manifest.has("directory"):
+		return ""
+	return manifest["directory"].duplicate(true)
+
+
+# Get an array of all game entries in the manifest.
+# Return a copy to avoid accidental modification
+func get_all_games() -> Array[GameEntry]:
+	if not manifest.has("games"):
+		return []
+	return manifest["games"].duplicate(true)
+
+
+# Get a specific game entry by its "game" key.
+# Return a copy to avoid accidental modification
+func get_game_by_key(game_key: String) -> GameEntry:
+	for game in manifest.games:
+		if game.game.to_lower() == game_key.to_lower():
+			return game.duplicate(true)
+	return null
+ 
