@@ -1,0 +1,38 @@
+﻿{
+  "collection": "Noisebridge 1v1 Arcade Table",
+  "directory": "C:\\Users\\noise\\Documents\\Games",
+  "games": [
+    {
+      "repo_owner": "singlearity",
+      "repo_name": "CoffeeTableAirHockey",
+      "title": "Air Hockey",
+      "executable": "AirHockey.exe",
+      "developers": [
+        "Arity",
+        "Culteejen"
+      ],
+      "genres": [
+        "Arcade",
+        "Sports",
+        "Action"
+      ],
+      "players": 2,
+      "description": "It's like Air Hockey, but cooler!"
+    },
+    {
+      "repo_owner": "outrightmental",
+      "repo_name": "Blockbusters",
+      "title": "Blockbusters",
+      "executable": "Blockbusters.exe",
+      "developers": [
+        "Outright Mental"
+      ],
+      "genres": [
+        "Action",
+        "Arcade"
+      ],
+      "players": 2,
+      "description": "Fast-paced unfair action sport where contestants sabotage each other to mine & capture gems."
+    }
+  ]
+}

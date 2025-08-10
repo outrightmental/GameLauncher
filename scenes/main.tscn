@@ -22,6 +22,7 @@ offset_right = 2420.0
 offset_bottom = 1180.0
 rotation = 1.57079
 theme = ExtResource("2_0wfyh")
+bbcode_enabled = true
 
 [node name="TextP2" type="RichTextLabel" parent="."]
 offset_left = 1380.0
@@ -30,3 +31,4 @@ offset_right = 2620.0
 offset_bottom = 2417.0
 rotation = -1.5708
 theme = ExtResource("2_0wfyh")
+bbcode_enabled = true
