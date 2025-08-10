@@ -6,25 +6,27 @@
 
 Game Launcher for the [Noisebridge 1v1 Coffee Table](https://www.noisebridge.net/wiki/Coffee_Table)
 
-## Requirements
-
-Windows 10 or later.
-
 ## Operation
+
+Requires Windows 10 or later.
 
 On your computer, create a folder that will be used as the root of the game library resources. Let's call this folder the **Game Library Folder**.
 
-Download the [latest release](releases/latest) and save **GameLauncher.exe** in the **Game Library Folder**.
+The default location of the **Game Library Folder** is `C:\Users\<username>\Documents\GameLibrary`.
 
-For example, if your username is `noise` you might create a folder at `C:\Users\noise\Documents\GameLibrary`.
+Download the [latest release](releases/latest) and save **GameLauncher.exe** in the **Game Library Folder**.
 
 If you want the Game Launcher to start automatically when you log in to your computer, you can add **GameLauncher.exe** to your startup applications.
 
-## games.json
+### Game Library Manifset JSON file
 
 You'll need to create a **games.json** file in the **Game Library Folder**. This file contains the list of games that will be displayed in the Game Launcher.
 
 Use the example [games.json](example/games.json) as a template.
+
+By default, the Game Launcher will look for the **games.json** file in the same directory as **GameLauncher.exe**.
+
+You can also place a **games.json** file in the default user home location, which is `C:\Users\<username>\Documents\GameLibrary\games.json`.
 
 
 ## Continuous Integration

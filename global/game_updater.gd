@@ -1,4 +1,4 @@
-﻿extends ResourceOperations
+extends ResourceOperations
 
 # --- Optional: set a GitHub token to avoid harsh rate limits (60/hr unauth'd).
 # You can also pass it from project settings or read from env:
@@ -15,9 +15,9 @@ const GH_HEADERS         := [
 # Public method to update all games from the manifest file.
 # -----------------------------------------------------------
 # 
-func update_all_games_from_manifest() -> void:
-	for game in ManifestLoader.get_games():
-		print("Updating game: %s/%s -> %s" % [game.repo_owner, game.repo_name, game.game_folder])
+func update_all_games() -> void:
+	for game in ManifestLoader.manifest.games:
+		_update_game(game)
 
 
 # -----------------------------------------------------------
@@ -26,7 +26,9 @@ func update_all_games_from_manifest() -> void:
 # 
 # This will download the latest release and extract it to the specified folder.
 #
-func _update_game(repo_owner: String, repo_name: String, game_folder: String) -> void:
+func _update_game(game : ManifestLoader.GameLibraryEntry) -> void:
+	var game_folder = ManifestLoader.get_absolute_path_to_game_folder(game)
+	
 	# Ensure folder exists
 	_make_dir_recursive_abs(game_folder)
 
@@ -40,18 +42,18 @@ func _update_game(repo_owner: String, repo_name: String, game_folder: String) ->
 	var current_version := FileAccess.get_file_as_string(version_path).strip_edges()
 
 	# Get latest release info
-	var url     := "%s/repos/%s/%s/releases/latest" % [API_BASE, repo_owner, repo_name]
+	var url     := "%s/repos/%s/%s/releases/latest" % [API_BASE, game.repo_owner, game.repo_name]
 	var headers := GH_HEADERS.duplicate()
 	if github_token.strip_edges() != "":
 		headers.append("Authorization: Bearer %s" % github_token)
 	var release = await _get_json(url, headers)
 	if typeof(release) != TYPE_DICTIONARY:
-		error("Failed to get release for %s/%s" % [repo_owner, repo_name])
+		error("Failed to get release for %s/%s" % [game.repo_owner, game.repo_name])
 		return
 
 	var latest_version := str(release.get("tag_name", ""))
 	if latest_version == "":
-		error("No tag_name on latest release for %s/%s" % [repo_owner, repo_name])
+		error("No tag_name on latest release for %s/%s" % [game.repo_owner, game.repo_name])
 		return
 
 	if current_version == latest_version:
@@ -72,7 +74,7 @@ func _update_game(repo_owner: String, repo_name: String, game_folder: String) ->
 			zip_asset = a
 			break
 	if zip_asset.is_empty():
-		error("Error: Game artifact (*.zip) not found in latest release for %s/%s" % [repo_owner, repo_name])
+		error("Error: Game artifact (*.zip) not found in latest release for %s/%s" % [game.repo_owner, game.repo_name])
 		return
 
 	var zip_url  := str(zip_asset.get("browser_download_url", ""))
