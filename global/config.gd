@@ -2,6 +2,7 @@ extends Node
 
 # Paths to manifest files
 const MANIFEST_EXTERNAL_PATH: String = "games.json"
+const MANIFEST_INTERNAL_PATH: String = "res://example/games.json"
 # Formatting template for player input
 const player_input_mapping_format: Dictionary = {
 													"left": "p%d_left",

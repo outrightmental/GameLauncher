@@ -24,6 +24,11 @@ func get_error_messages() -> String:
 # Returns true if there are any errors recorded.
 func has_errors() -> bool:
 	return errors.size() > 0
+	
+	
+# Clear all recorded errors
+func clear_errors() -> void:
+	errors.clear()
 
 
 # Add error message to the list and log it.
