@@ -1,17 +1,29 @@
 extends Node
 
-# --- Optional: set a GitHub token to avoid harsh rate limits (60/hr unauth'd).
-var GITHUB_TOKEN: String = OS.get_environment("GITHUB_TOKEN")
+# -----------------------------------------------------------
+# GameUpdater class to handle game updates from the manifest file.
+# This class provides methods to update all games or a specific game
+# from the manifest file. It downloads the latest release from GitHub,
+# extracts it to the specified folder, and updates the VERSION file.
+# It also emits signals to notify the UI about the update progress,
+# completion, or errors.
+# ------------------------------------------------------------
 
+# --- Optional: set a GitHub token to avoid harsh rate limits (60/hr unauth'd).
+var GITHUB_TOKEN: String =  OS.get_environment("GITHUB_TOKEN")
 const API_BASE           := "https://api.github.com"
 const GH_HEADERS         := [
 							"User-Agent: GodotGameLauncher",
 							"Accept: application/vnd.github+json",
 							"X-GitHub-Api-Version: 2022-11-28"
 							]
-signal game_updating(game: ManifestLoader.GameLibraryEntry, message: String, progress: float)
+signal game_update_message(message: String)
+signal game_update_progress(progress: float)
 signal game_update_finished()
 signal game_update_error(message: String)
+# HTTPRequest instance for making API calls
+var http: HTTPRequest
+
 
 # -----------------------------------------------------------
 # Public method to update all games from the manifest file.
@@ -29,9 +41,9 @@ func update_all_games() -> void:
 # 
 # This will download the latest release and extract it to the specified folder.
 #
-func _update_game(game : ManifestLoader.GameLibraryEntry) -> void:
+func _update_game(game: ManifestLoader.GameLibraryEntry) -> void:
 	var game_folder = ManifestLoader.get_absolute_path_to_game_folder(game)
-	
+
 	# Ensure folder exists
 	_make_dir_recursive_abs(game_folder)
 
@@ -64,8 +76,10 @@ func _update_game(game : ManifestLoader.GameLibraryEntry) -> void:
 		return
 
 	# Notify user and let UI breathe if needed
-	print("Updating game version from %s to %s..." % [current_version, latest_version])
-	game_updating.emit(game, "Updating game %s from version %s to %s..." % [game.title, current_version, latest_version], 0.0)
+	if (current_version == "Nothing"):
+		game_update_message.emit("Installing %s version %s..." % [game.title, latest_version])
+	else:
+		game_update_message.emit("Updating %s from version %s to %s..." % [game.title, current_version, latest_version])
 	await get_tree().process_frame
 
 	# Wipe folder contents
@@ -81,31 +95,30 @@ func _update_game(game : ManifestLoader.GameLibraryEntry) -> void:
 	if zip_asset.is_empty():
 		game_update_error.emit("[GameUpdater] Error: Game artifact (*.zip) not found in latest release for %s/%s" % [game.repo_owner, game.repo_name])
 		return
-		
+
 	# Prepare to download zip
 	var zip_url  := str(zip_asset.get("browser_download_url", ""))
 	var zip_name := str(zip_asset.get("name", "game.zip"))
 	if zip_url == "":
 		game_update_error.emit("[GameUpdater] Error: asset has no browser_download_url")
 		return
+	var zip_path := game_folder.path_join(zip_name)
 
 	# Notify user and let UI breathe if needed
-	print("Downloading %s ..." % zip_name)
-	game_updating.emit(game, "Downloading game %s version %s..." % [game.title, latest_version], 0.1)
+	game_update_message.emit("Downloading %s ..." % zip_name)
 	await get_tree().process_frame
 
-	# Download zip to disk
-	var zip_path := game_folder.path_join(zip_name)
-	var http :=     _get_http()
+	# Download the zip file
+	http     = _get_http()
 	http.download_file = zip_path
-	var result                          = await http.request_completed
+	var result = await http.request_completed
 	http.queue_free()
 	var resp_code: int                  = result[1]
 	var resp_headers: PackedStringArray = result[2]
 	if resp_code < 200 or resp_code >= 300:
 		game_update_error.emit("[GameUpdater] HTTP request failed with code %d headers %s for URL: %s headers: %s" % [resp_code, resp_headers, url, headers])
 		return
-	
+
 	if not FileAccess.file_exists(zip_path):
 		game_update_error.emit("[GameUpdater] Error: Failed to download the game zip file.")
 		return
@@ -125,6 +138,20 @@ func _update_game(game : ManifestLoader.GameLibraryEntry) -> void:
 	print("Update complete. Current version is now %s." % latest_version)
 
 
+# Report progress to UI
+func _physics_process(_delta: float) -> void:
+	if http and http.is_inside_tree():
+		var downloaded := http.get_downloaded_bytes()
+		var total      := http.get_body_size()
+		if total > 0:
+			var progress := float(downloaded) / float(total)
+			game_update_progress.emit(progress)
+		else:
+			game_update_progress.emit(0.0)
+	else:
+		game_update_progress.emit(0.0)
+
+
 # -----------------------------------------------------------
 # HTTP helpers
 # -----------------------------------------------------------
@@ -138,12 +165,12 @@ func _full_headers(custom: Array) -> PackedStringArray:
 # Get JSON from URL with headers
 # Returns parsed JSON data or null on error
 func _get_json(url: String, headers: Array) -> Variant:
-	var http := _get_http()
-	var err :=  http.request(url, _full_headers(headers))
+	http = _get_http()
+	var err := http.request(url, _full_headers(headers))
 	if err != OK:
 		game_update_error.emit( "HTTP request failed with error %d for URL: %s headers: %s" % [err, url, headers])
 		return null
-	var result                          = await http.request_completed
+	var result = await http.request_completed
 	http.queue_free()
 	var resp_code: int                  = result[1]
 	var resp_headers: PackedStringArray = result[2]
@@ -152,6 +179,17 @@ func _get_json(url: String, headers: Array) -> Variant:
 		game_update_error.emit("[GameUpdater] HTTP request failed with code %d headers %s for URL: %s headers: %s" % [resp_code, resp_headers, url, headers])
 		return null
 	return JSON.parse_string(resp_body.get_string_from_utf8())
+
+
+# Handle download progress updates
+func _on_download_progress(downloaded: int, total: int) -> void:
+	if total > 0:
+		var progress := float(downloaded) / float(total)
+		game_update_progress.emit(progress)
+		print("Download progress: %.2f%%" % (progress * 100))
+	else:
+		print("Download progress: %d bytes downloaded" % downloaded)
+
 
 # -----------------------------------------------------------
 # Zip extraction (Godot 4.x ZIPReader)
@@ -232,7 +270,7 @@ func _write_text_file(path: String, text: String) -> void:
 
 # Create an HTTP request node and connect its completion signal.
 func _get_http() -> HTTPRequest:
-	var http = HTTPRequest.new()
+	http = HTTPRequest.new()
 	http.timeout = 60.0
 	add_child(http)
 	return http

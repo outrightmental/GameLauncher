@@ -13,7 +13,7 @@ border_width_left = 6
 border_width_top = 6
 border_width_right = 6
 border_width_bottom = 6
-border_color = Color(1, 0, 0, 1)
+border_color = Color(0.501961, 0.501961, 0.501961, 1)
 corner_radius_top_left = 36
 corner_radius_top_right = 36
 corner_radius_bottom_right = 36
@@ -65,5 +65,28 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_mc083")
 layout_mode = 2
 theme = ExtResource("1_4ebto")
 theme_override_colors/default_color = Color(1, 0, 0, 1)
+bbcode_enabled = true
+scroll_following = true
+
+[node name="ShowGameUpdating" type="PanelContainer" parent="."]
+layout_mode = 0
+offset_left = 100.0
+offset_top = 100.0
+offset_right = 1340.0
+offset_bottom = 1180.0
+theme = ExtResource("1_4ebto")
+theme_override_styles/panel = SubResource("StyleBoxFlat_mc083")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="ShowGameUpdating"]
+layout_mode = 2
+
+[node name="ProgressBar" type="ProgressBar" parent="ShowGameUpdating/VBoxContainer"]
+layout_mode = 2
+
+[node name="Console" type="RichTextLabel" parent="ShowGameUpdating/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme = ExtResource("1_4ebto")
+theme_override_colors/default_color = Color(1, 1, 1, 1)
 bbcode_enabled = true
 scroll_following = true
