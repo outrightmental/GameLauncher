@@ -1,12 +1,13 @@
 extends Control
 
+
 # On initialization, connect signals
 func _init() -> void:
 	ManifestLoader.manifest_loaded.connect(_on_manifest_loaded)
-	ManifestLoader.manifest_error.connect(_show_error_dialog)
+	ManifestLoader.manifest_error.connect(_show_error)
 	GameUpdater.game_updating.connect(_on_game_updating)
 	GameUpdater.game_update_finished.connect(_on_game_update_finished)
-	GameUpdater.game_update_error.connect(_show_error_dialog)
+	GameUpdater.game_update_error.connect(_show_error)
 
 
 # After the manifest is loaded
@@ -24,23 +25,10 @@ func _do_display_games() -> void:
 
 
 # Display manifest errors in a modal dialog
-func _show_error_dialog(message: String) -> void:
-	#	error_dialog.dialog_text += message + "\n"
-	#	if not error_dialog.is_visible():
-	#		error_dialog.popup_centered()
-	# TODO implement an error dialog
-	pass
-
-
-# Handle the confirmation of the error dialog
-# This clears the dialog text and any recorded errors.
-func _on_error_dialog_confirmed() -> void:
-	#	error_dialog.dialog_text = ""
-	#	if ManifestLoader.has_errors():
-	#		ManifestLoader.clear_errors()
-	#	if GameUpdater.has_errors():
-	#		GameUpdater.clear_errors()
-	# TODO implement confirmation of error dialog
+func _show_error(message: String) -> void:
+	$ShowError/Console.text += message + "\n"
+	if not $ShowError.is_visible():
+		$ShowError.show()
 	pass
 
 
