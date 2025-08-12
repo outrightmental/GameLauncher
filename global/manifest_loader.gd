@@ -59,7 +59,7 @@ func _ready() -> void:
 		print("Using internal manifest at: ", internal)
 		_load_manifest(internal)
 	else:
-		manifest_error.emit("[ManifestLoader] manifest.json not found!\n%s\n%s\n%s" % [home, local, internal])
+		manifest_error.emit("manifest.json not found!\n%s\n%s\n%s" % [home, local, internal])
 
 
 # Load a games.json file from the executable folder
@@ -99,7 +99,7 @@ func _load_manifest(manifest_path: String) -> void:
 	f = FileAccess.open(manifest_path, FileAccess.ModeFlags.READ)
 
 	if f == null:
-		manifest_error.emit("[ManifestLoader] Unable to open %s: %s" % [manifest_path, FileAccess.get_open_error()])
+		manifest_error.emit("Unable to open %s: %s" % [manifest_path, FileAccess.get_open_error()])
 		return
 
 	text = f.get_as_text()
@@ -116,18 +116,18 @@ func _load_manifest(manifest_path: String) -> void:
 	var required_top := ["collection", "directory", "games"]
 	for k in required_top:
 		if not data.has(k):
-			manifest_error.emit("[ManifestLoader] Missing required top-level key: %s" % k)
+			manifest_error.emit("Missing required top-level key: %s" % k)
 			return
 
 	if typeof(data["games"]) != TYPE_ARRAY:
-		manifest_error.emit("[ManifestLoader] `games` must be an array.")
+		manifest_error.emit("`games` must be an array.")
 		return
 
 	# Optionally validate game entries minimal fields
 	for i in data["games"].size():
 		var g = data["games"][i]
 		if typeof(g) != TYPE_DICTIONARY:
-			manifest_error.emit("[ManifestLoader] games[%d] must be an object." % i)
+			manifest_error.emit("games[%d] must be an object." % i)
 			return
 
 	manifest = GameLibraryManifest.new()
@@ -152,7 +152,7 @@ func _load_manifest(manifest_path: String) -> void:
 # Helper to get a required key from a dictionary
 func _get_required_from_data(data: Dictionary, key: String, default: Variant) -> Variant:
 	if not data.has(key):
-		manifest_error.emit("[ManifestLoader] Game entry %s is missing required key: %s" % [data, key])
+		manifest_error.emit("Game entry %s is missing required key: %s" % [data, key])
 		return default
 	return data[key]
 
