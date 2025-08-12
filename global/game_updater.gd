@@ -112,7 +112,7 @@ func _update_game(game: ManifestLoader.GameLibraryEntry) -> void:
 	var zip_path := game_folder.path_join(zip_name)
 
 	# Notify user and let UI breathe if needed
-	game_update_message.emit("Downloading %s to %s ..." % [zip_url, zip_path])
+	game_update_message.emit("Downloading %s ..." % [zip_name])
 	await get_tree().process_frame
 
 	# Download the zip file
