@@ -1,0 +1,37 @@
+[gd_scene load_steps=3 format=3 uid="uid://cmijftuchxf62"]
+
+[ext_resource type="PackedScene" uid="uid://1navyuxcvr1" path="res://scenes/main.tscn" id="2_sugp2"]
+
+[sub_resource type="ViewportTexture" id="ViewportTexture_sugp2"]
+viewport_path = NodePath("UIViewport")
+
+[node name="Main" type="Node2D"]
+
+[node name="Background" type="ColorRect" parent="."]
+z_index = -10
+offset_right = 2560.0
+offset_bottom = 1440.0
+color = Color(0, 0, 0, 1)
+
+[node name="UIViewport" type="SubViewport" parent="."]
+size = Vector2i(1440, 1280)
+render_target_update_mode = 4
+
+[node name="Display" parent="UIViewport" instance=ExtResource("2_sugp2")]
+offset_right = 0.0
+offset_bottom = 0.0
+
+[node name="DisplayP1" type="TextureRect" parent="."]
+offset_left = 1280.0
+offset_right = 2720.0
+offset_bottom = 1280.0
+rotation = 1.5708
+texture = SubResource("ViewportTexture_sugp2")
+
+[node name="DisplayP2" type="TextureRect" parent="."]
+offset_left = 1280.0
+offset_top = 1440.0
+offset_right = 2720.0
+offset_bottom = 2720.0
+rotation = -1.5708
+texture = SubResource("ViewportTexture_sugp2")

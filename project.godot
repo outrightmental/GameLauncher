@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="GameLauncher"
-run/main_scene="res://scenes/main.tscn"
+run/main_scene="res://scenes/display.tscn"
 config/features=PackedStringArray("4.4", "GL Compatibility")
 config/icon="res://icon.svg"
 
@@ -22,6 +22,7 @@ Util="*res://global/util.gd"
 AudioManager="*res://global/audio_manager.tscn"
 InputManager="*res://global/input_manager.gd"
 ManifestLoader="*res://global/manifest_loader.gd"
+GameUpdater="*res://global/game_updater.gd"
 
 [display]
 

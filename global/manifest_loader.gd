@@ -1,4 +1,4 @@
-extends ResourceOperations
+extends Node
 
 #
 # -----------------------------------------------------------
@@ -14,7 +14,8 @@ extends ResourceOperations
 #
 
 # Signal emitted when the manifest is successfully loaded.
-signal manifest_loaded(manifest: GameLibraryManifest)
+signal manifest_loaded
+signal manifest_error(message: String)
 # Manifest data storage
 var manifest: GameLibraryManifest
 
@@ -25,14 +26,13 @@ var manifest: GameLibraryManifest
 class GameLibraryManifest extends RefCounted:
 	var collection: String = ""
 	var directory: String = ""
-	var games: Array[GameEntry] = []
+	var games: Array[GameLibraryEntry] = []
 
 
 # -----------------------------------------------------------
 # Game Library Manifest Entry
 # -----------------------------------------------------------
-class GameEntry extends RefCounted:
-	var game: String = ""
+class GameLibraryEntry extends RefCounted:
 	var title: String = ""
 	var executable: String = ""
 	var developers: Array[String] = []
@@ -46,18 +46,20 @@ class GameEntry extends RefCounted:
 # Prefer a manifest next to the executable (for packaged builds),
 # fall back to project folder during development.
 func _ready() -> void:
-	var exe_dir  := OS.get_executable_path().get_base_dir()
-	var external := exe_dir.path_join(Config.MANIFEST_EXTERNAL_PATH)
-	var internal =  Config.MANIFEST_INTERNAL_PATH
-
-	if FileAccess.file_exists(external):
-		print("Using external manifest at: ", external)
-		_load_manifest(external)
+	var home   = Config.MANIFEST_PATH_HOME
+	var local   = Config.MANIFEST_PATH_LOCAL
+	var internal   = Config.MANIFEST_PATH_INTERNAL
+	if FileAccess.file_exists(home):
+		print("Using user default location manifest at: ", home)
+		_load_manifest(home)
+	elif FileAccess.file_exists(local):
+		print("Using local manifest at: ", local)
+		_load_manifest(local)
 	elif FileAccess.file_exists(internal):
 		print("Using internal manifest at: ", internal)
 		_load_manifest(internal)
 	else:
-		error("manifest.json not found at either %s or %s" % [external, internal])
+		manifest_error.emit("manifest.json not found!\n%s\n%s\n%s" % [home, local, internal])
 
 
 # Load a games.json file from the executable folder
@@ -66,7 +68,7 @@ func _ready() -> void:
 #
 # {
 #   "collection": "Noisebridge 1v1 Arcade Table",
-#   "directory": "C:\\Users\\noise\\Documents\\Games",
+#   "directory": "C:\\Users\\noise\\Documents\\GameLibrary",
 #   "games": [
 #     {
 #       "game": "CamelCaseGameName",
@@ -97,7 +99,7 @@ func _load_manifest(manifest_path: String) -> void:
 	f = FileAccess.open(manifest_path, FileAccess.ModeFlags.READ)
 
 	if f == null:
-		error("Unable to open %s: %s" % [manifest_path, FileAccess.get_open_error()])
+		manifest_error.emit("Unable to open %s: %s" % [manifest_path, FileAccess.get_open_error()])
 		return
 
 	text = f.get_as_text()
@@ -114,43 +116,43 @@ func _load_manifest(manifest_path: String) -> void:
 	var required_top := ["collection", "directory", "games"]
 	for k in required_top:
 		if not data.has(k):
-			error("Missing required top-level key: %s" % k)
+			manifest_error.emit("Missing required top-level key: %s" % k)
 			return
 
 	if typeof(data["games"]) != TYPE_ARRAY:
-		error("`games` must be an array.")
+		manifest_error.emit("`games` must be an array.")
 		return
 
 	# Optionally validate game entries minimal fields
 	for i in data["games"].size():
 		var g = data["games"][i]
 		if typeof(g) != TYPE_DICTIONARY:
-			error("games[%d] must be an object." % i)
+			manifest_error.emit("games[%d] must be an object." % i)
 			return
 
 	manifest = GameLibraryManifest.new()
 	manifest.collection = data.get("collection", "")
 	manifest.directory = data.get("directory", "")
 	for game_data in data["games"]:
-		var entry = GameEntry.new()
-		entry.title = _get_required_from_data(game_data,"title", "")
-		entry.executable = _get_required_from_data(game_data,"executable", "")
-		for developer in _get_required_from_data(game_data,"developers", []):
+		var entry = GameLibraryEntry.new()
+		entry.title = _get_required_from_data(game_data, "title", "")
+		entry.executable = _get_required_from_data(game_data, "executable", "")
+		for developer in _get_required_from_data(game_data, "developers", []):
 			entry.developers.append(developer)
-		for genre in _get_required_from_data(game_data,"genres", []):
+		for genre in _get_required_from_data(game_data, "genres", []):
 			entry.genres.append(genre)
-		entry.players = _get_required_from_data(game_data,"players", 2)
-		entry.description = _get_required_from_data(game_data,"description", "")
-		entry.repo_owner = _get_required_from_data(game_data,"repo_owner", "")
-		entry.repo_name = _get_required_from_data(game_data,"repo_name", "")
+		entry.players = _get_required_from_data(game_data, "players", 2)
+		entry.description = _get_required_from_data(game_data, "description", "")
+		entry.repo_owner = _get_required_from_data(game_data, "repo_owner", "")
+		entry.repo_name = _get_required_from_data(game_data, "repo_name", "")
 		manifest.games.append(entry)
-	manifest_loaded.emit(manifest)
+	manifest_loaded.emit()
 
 
 # Helper to get a required key from a dictionary
 func _get_required_from_data(data: Dictionary, key: String, default: Variant) -> Variant:
 	if not data.has(key):
-		error("Game entry %s is missing required key: %s" % [data, key])
+		manifest_error.emit("Game entry %s is missing required key: %s" % [data, key])
 		return default
 	return data[key]
 
@@ -171,20 +173,12 @@ func get_directory_path() -> String:
 	return manifest["directory"].duplicate(true)
 
 
-# Get an array of all game entries in the manifest.
-# Return a copy to avoid accidental modification
-func get_all_games() -> Array[GameEntry]:
-	if not manifest.has("games"):
-		return []
-	return manifest["games"].duplicate(true)
-
-
 # Get the absolute path to an executable for a specific game entry.
 # This constructs the path using the manifest's directory and the game's executable name.
-func get_absolute_path_to_game_executable(repo_owner: String, repo_name: String, executable: String) -> String:
-	return get_absolute_path_to_game_folder(repo_owner, repo_name).path_join(executable)
+func get_absolute_path_to_game_executable(game: GameLibraryEntry) -> String:
+	return get_absolute_path_to_game_folder(game).path_join(game.executable)
 
 
 # Get the absolute path to a game folder
-func get_absolute_path_to_game_folder(repo_owner: String, repo_name: String) -> String:
-	return manifest.directory.path_join(repo_owner).path_join(repo_name)
+func get_absolute_path_to_game_folder(game: GameLibraryEntry) -> String:
+	return manifest.directory.path_join(game.repo_owner).path_join(game.repo_name)
