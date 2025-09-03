@@ -10,8 +10,8 @@ extends Control
 
 # On initialization, connect signals
 func _init() -> void:
-	ManifestLoader.manifest_error.connect(_on_manifest_error)
-	ManifestLoader.manifest_loaded.connect(_on_manifest_loaded)
+	GameLibrary.manifest_error.connect(_on_manifest_error)
+	GameLibrary.manifest_loaded.connect(_on_manifest_loaded)
 	GameUpdater.game_update_error.connect(_on_game_update_error)
 	GameUpdater.game_update_message.connect(_on_game_update_message)
 	GameUpdater.game_update_progress.connect(_on_game_update_progress)
@@ -28,9 +28,9 @@ func _on_all_games_updated() -> void:
 	if show_update_container.is_visible():
 		show_update_container.hide()
 	var text: String = ""
-	text += "[b]Collection: %s[/b]\n\n" % ManifestLoader.manifest.collection
-	for game in ManifestLoader.manifest.games:
-		text += "[b]%s[/b]\n%s\n\n" % [game.title, ManifestLoader.get_absolute_path_to_game_executable(game)]
+	text += "[b]Collection: %s[/b]\n\n" % GameLibrary.manifest.collection
+	for game in GameLibrary.manifest.games:
+		text += "[b]%s[/b]\n%s\n\n" % [game.title, GameLibrary.get_absolute_path_to_game_executable(game)]
 	$Console.text = text
 
 

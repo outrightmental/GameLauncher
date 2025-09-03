@@ -36,10 +36,10 @@ var downloading_phase_ratio: float = 0.95
 # -----------------------------------------------------------
 # 
 func update_all_games() -> void:
-	total_games = ManifestLoader.manifest.games.size()
+	total_games = GameLibrary.manifest.games.size()
 	for i in range(total_games):
 		current_game = i
-		await _update_game(ManifestLoader.manifest.games[i])
+		await _update_game(GameLibrary.manifest.games[i])
 	all_games_updated.emit()
 
 
@@ -49,14 +49,14 @@ func update_all_games() -> void:
 # 
 # This will download the latest release and extract it to the specified folder.
 #
-func _update_game(game: ManifestLoader.GameLibraryEntry) -> void:
+func _update_game(game: GameLibrary.Entry) -> void:
 	# Prepare GitHub HTTP headers
 	var headers := GH_HEADERS.duplicate()
 	if GITHUB_TOKEN.strip_edges() != "":
 		headers.append("Authorization: Bearer %s" % GITHUB_TOKEN)
 
 	# Ensure folder exists
-	var game_folder = ManifestLoader.get_absolute_path_to_game_folder(game)
+	var game_folder = GameLibrary.get_absolute_path_to_game_folder(game)
 	_make_dir_recursive_abs(game_folder)
 
 	# Ensure VERSION file exists
