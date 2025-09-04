@@ -3,7 +3,7 @@
 # --- Lifecycle -----------------------------------------------------------
 signal action_pressed(player: int, action: String)     # e.g., "fire", "start"
 signal action_released(player: int, action: String)
-# --- Config --------------------------------------------------------------
+# --- Constants --------------------------------------------------------------
 
 # Names of input actions that are used in the Input Map
 const INPUT_LEFT: String  = "left"

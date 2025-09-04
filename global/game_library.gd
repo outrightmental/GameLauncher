@@ -46,9 +46,9 @@ class Entry extends RefCounted:
 # Prefer a manifest next to the executable (for packaged builds),
 # fall back to project folder during development.
 func _ready() -> void:
-	var home   = Config.MANIFEST_PATH_HOME
-	var local   = Config.MANIFEST_PATH_LOCAL
-	var internal   = Config.MANIFEST_PATH_INTERNAL
+	var home   = Constants.MANIFEST_PATH_HOME
+	var local   = Constants.MANIFEST_PATH_LOCAL
+	var internal   = Constants.MANIFEST_PATH_INTERNAL
 	if FileAccess.file_exists(home):
 		print("Using user default location manifest at: ", home)
 		_load_manifest(home)

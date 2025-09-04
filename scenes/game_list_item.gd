@@ -1,23 +1,23 @@
+class_name GameListItem
 extends Control
 
-@onready var title_label: Label = $RichTextLabel
+@onready var text_label: RichTextLabel = $PanelContainer/RichTextLabel
+@onready var background_color: ColorRect = $BackgroundColor
 
 var game: GameLibrary.Entry
 
+
 func setup(entry: GameLibrary.Entry) -> void:
 	game = entry
-	var developers: String = ""
-	if game.developers.size() > 0:
-		developers = "by %s" % ", ".join(game.developers)
-	var genres: String = ""
-	if game.genres.size() > 0:
-		genres = "Genres: %s" % ", ".join(game.genres)
-	var players: String = ""
-	if game.players > 0:
-		players = "Players: %d" % game.players
-	var description: String = ""
-	if game.description != "":
-		description = "\n\n%s" % game.description
-	title_label.bbcode_text = "[b]%s[/b]\n%s\n%s%s" % [game.title, developers, genres, players, description]
-	title_label.scroll_to_line(0)
-	
+
+
+func _ready() -> void:
+	text_label.bbcode_text = "[b]%s[/b]\nby %s\n%s" % [game.title, ", ".join(game.developers), game.description]
+	set_selected(false)
+
+
+func set_selected(selected: bool) -> void:
+	var bg_color: Color   = Constants.GAME_LIST_ITEM_BG_SELECTED_COLOR if selected else Constants.GAME_LIST_ITEM_BG_UNSELECTED_COLOR
+	var text_color: Color = Constants.GAME_LIST_ITEM_TEXT_SELECTED_COLOR if selected else Constants.GAME_LIST_ITEM_TEXT_UNSELECTED_COLOR
+	background_color.color = bg_color
+	text_label.set("theme_override_colors/default_color", text_color)
