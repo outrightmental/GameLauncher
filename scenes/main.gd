@@ -31,9 +31,9 @@ func _ready() -> void:
 
 # Handle input events
 func _physics_process(_delta: float) -> void:
-	if Input.is_action_just_pressed("p1_up") or Input.is_action_just_pressed("p2_up"):
+	if Input.is_action_just_pressed("p1_left") or Input.is_action_just_pressed("p2_left"):
 		_move_selection(-1)
-	elif Input.is_action_just_pressed("p1_down") or Input.is_action_just_pressed("p2_down"):
+	elif Input.is_action_just_pressed("p1_right") or Input.is_action_just_pressed("p2_right"):
 		_move_selection(1)
 	elif Input.is_action_just_pressed("p1_start") or Input.is_action_just_pressed("p2_start"):
 		if game_list_items.size() > 0:
