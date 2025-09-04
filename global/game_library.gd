@@ -17,22 +17,22 @@ extends Node
 signal manifest_loaded
 signal manifest_error(message: String)
 # Manifest data storage
-var manifest: GameLibraryManifest
+var manifest: Manifest
 
 
 # -----------------------------------------------------------
 # Game Library Manifest Type
 # -----------------------------------------------------------
-class GameLibraryManifest extends RefCounted:
+class Manifest extends RefCounted:
 	var collection: String = ""
 	var directory: String = ""
-	var games: Array[GameLibraryEntry] = []
+	var games: Array[Entry] = []
 
 
 # -----------------------------------------------------------
 # Game Library Manifest Entry
 # -----------------------------------------------------------
-class GameLibraryEntry extends RefCounted:
+class Entry extends RefCounted:
 	var title: String = ""
 	var executable: String = ""
 	var developers: Array[String] = []
@@ -46,9 +46,9 @@ class GameLibraryEntry extends RefCounted:
 # Prefer a manifest next to the executable (for packaged builds),
 # fall back to project folder during development.
 func _ready() -> void:
-	var home   = Config.MANIFEST_PATH_HOME
-	var local   = Config.MANIFEST_PATH_LOCAL
-	var internal   = Config.MANIFEST_PATH_INTERNAL
+	var home   = Constants.MANIFEST_PATH_HOME
+	var local   = Constants.MANIFEST_PATH_LOCAL
+	var internal   = Constants.MANIFEST_PATH_INTERNAL
 	if FileAccess.file_exists(home):
 		print("Using user default location manifest at: ", home)
 		_load_manifest(home)
@@ -130,11 +130,11 @@ func _load_manifest(manifest_path: String) -> void:
 			manifest_error.emit("games[%d] must be an object." % i)
 			return
 
-	manifest = GameLibraryManifest.new()
+	manifest = Manifest.new()
 	manifest.collection = data.get("collection", "")
 	manifest.directory = data.get("directory", "")
 	for game_data in data["games"]:
-		var entry = GameLibraryEntry.new()
+		var entry = Entry.new()
 		entry.title = _get_required_from_data(game_data, "title", "")
 		entry.executable = _get_required_from_data(game_data, "executable", "")
 		for developer in _get_required_from_data(game_data, "developers", []):
@@ -175,10 +175,10 @@ func get_directory_path() -> String:
 
 # Get the absolute path to an executable for a specific game entry.
 # This constructs the path using the manifest's directory and the game's executable name.
-func get_absolute_path_to_game_executable(game: GameLibraryEntry) -> String:
+func get_absolute_path_to_game_executable(game: Entry) -> String:
 	return get_absolute_path_to_game_folder(game).path_join(game.executable)
 
 
 # Get the absolute path to a game folder
-func get_absolute_path_to_game_folder(game: GameLibraryEntry) -> String:
+func get_absolute_path_to_game_folder(game: Entry) -> String:
 	return manifest.directory.path_join(game.repo_owner).path_join(game.repo_name)

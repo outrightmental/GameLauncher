@@ -5,17 +5,44 @@ extends Control
 @onready var show_update_container: PanelContainer = $ShowUpdate
 @onready var show_update_progress_bar: ProgressBar = $ShowUpdate/VBoxContainer/ProgressBar
 @onready var show_update_console: RichTextLabel = $ShowUpdate/VBoxContainer/Console
-@onready var console: RichTextLabel = $Console
+@onready var show_games_container: PanelContainer = $ShowGames
+@onready var show_games_list: VBoxContainer = $ShowGames/ScrollContainer/VBoxContainer
+@onready var show_games_scroll: ScrollContainer = $ShowGames/ScrollContainer
+const game_list_item_scene: PackedScene         = preload("res://scenes/game_list_item.tscn")
+var game_list_items: Array[GameListItem]        = []
+var game_list_selected_index: int               = 0
 
 
 # On initialization, connect signals
 func _init() -> void:
-	ManifestLoader.manifest_error.connect(_on_manifest_error)
-	ManifestLoader.manifest_loaded.connect(_on_manifest_loaded)
+	GameLibrary.manifest_error.connect(_on_manifest_error)
+	GameLibrary.manifest_loaded.connect(_on_manifest_loaded)
 	GameUpdater.game_update_error.connect(_on_game_update_error)
 	GameUpdater.game_update_message.connect(_on_game_update_message)
 	GameUpdater.game_update_progress.connect(_on_game_update_progress)
 	GameUpdater.all_games_updated.connect(_on_all_games_updated)
+
+
+func _ready() -> void:
+	show_error_container.hide()
+	show_update_container.hide()
+	show_games_container.hide()
+
+
+# Handle input events
+func _physics_process(_delta: float) -> void:
+	if Input.is_action_just_pressed("p1_up") or Input.is_action_just_pressed("p2_up"):
+		_move_selection(-1)
+	elif Input.is_action_just_pressed("p1_down") or Input.is_action_just_pressed("p2_down"):
+		_move_selection(1)
+	elif Input.is_action_just_pressed("p1_start") or Input.is_action_just_pressed("p2_start"):
+		if game_list_items.size() > 0:
+			var selected_game: GameLibrary.Entry = game_list_items[game_list_selected_index].game
+			var executable_path: String          = GameLibrary.manifest.directory.path_join(selected_game.repo_owner).path_join(selected_game.repo_name).path_join(selected_game.executable)
+			print("Launching game: %s" % executable_path)
+			var err = OS.shell_open(executable_path)
+			if err != OK:
+				_show_error("Failed to launch game: %s" % executable_path)
 
 
 # After the manifest is loaded, update all games
@@ -27,11 +54,15 @@ func _on_manifest_loaded() -> void:
 func _on_all_games_updated() -> void:
 	if show_update_container.is_visible():
 		show_update_container.hide()
-	var text: String = ""
-	text += "[b]Collection: %s[/b]\n\n" % ManifestLoader.manifest.collection
-	for game in ManifestLoader.manifest.games:
-		text += "[b]%s[/b]\n%s\n\n" % [game.title, ManifestLoader.get_absolute_path_to_game_executable(game)]
-	$Console.text = text
+	if not show_games_container.is_visible():
+		show_games_container.show()
+	# for each game in the library manifest, add an item to the game list
+	for game in GameLibrary.manifest.games:
+		var item: Control = game_list_item_scene.instantiate()
+		item.setup(game)
+		game_list_items.append(item)
+		show_games_list.add_child(item)
+	_update_selected()
 
 
 # Handle manifest loading errors
@@ -64,4 +95,18 @@ func _on_game_update_message(message: String) -> void:
 # Handle game update progress signal
 func _on_game_update_progress(progress: float) -> void:
 	show_update_progress_bar.value = progress
-	
+
+
+# Move the selection up or down in the game list
+func _move_selection(direction: int) -> void:
+	if game_list_items.size() == 0:
+		return
+	game_list_selected_index = wrap(game_list_selected_index +direction, 0, game_list_items.size())
+	show_games_scroll.scroll_vertical = int(game_list_items[game_list_selected_index].global_position.y)
+	_update_selected()
+
+
+# Update the selected game in the list
+func _update_selected() -> void:
+	for i in game_list_items.size():
+		game_list_items[i].set_selected(i == game_list_selected_index)

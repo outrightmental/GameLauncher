@@ -19,3 +19,9 @@ const player_input_mapping_format: Dictionary = {
 													"start": "p%d_start",
 													"table": "p%d_table",
 												}
+
+const GAME_LIST_ITEM_CONTENT_MARGIN: int = 16
+const GAME_LIST_ITEM_BG_UNSELECTED_COLOR: Color = Color(0.1, 0.1, 0.1, 0.5)
+const GAME_LIST_ITEM_BG_SELECTED_COLOR: Color = Color(0.2, 0.2, 0.2, 0.8)
+const GAME_LIST_ITEM_TEXT_UNSELECTED_COLOR: Color = Color(1, 1, 1, 0.5)
+const GAME_LIST_ITEM_TEXT_SELECTED_COLOR: Color = Color(1, 1, 1, 1)

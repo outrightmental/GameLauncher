@@ -1,0 +1,43 @@
+[gd_scene load_steps=4 format=3 uid="uid://bywsraxso11jh"]
+
+[ext_resource type="Script" uid="uid://dl3k433unjh1i" path="res://scenes/game_list_item.gd" id="1_mfh25"]
+[ext_resource type="Theme" uid="uid://0y1n83r4ol3" path="res://themes/main.tres" id="2_3fdci"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_3fdci"]
+content_margin_left = 16.0
+content_margin_top = 16.0
+content_margin_right = 16.0
+content_margin_bottom = 16.0
+
+[node name="GameListItem" type="Control"]
+custom_minimum_size = Vector2(1360, 200)
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = -1200.0
+offset_bottom = -1240.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_mfh25")
+
+[node name="BackgroundColor" type="ColorRect" parent="."]
+layout_mode = 2
+offset_right = 1360.0
+offset_bottom = 200.0
+color = Color(0.196078, 0.196078, 0.196078, 1)
+
+[node name="PanelContainer" type="PanelContainer" parent="."]
+custom_minimum_size = Vector2(1360, 200)
+layout_mode = 0
+offset_right = 1360.0
+offset_bottom = 200.0
+theme = ExtResource("2_3fdci")
+theme_override_styles/panel = SubResource("StyleBoxEmpty_3fdci")
+
+[node name="RichTextLabel" type="RichTextLabel" parent="PanelContainer"]
+layout_mode = 2
+theme = ExtResource("2_3fdci")
+bbcode_enabled = true
+text = "Game Info Goes Here"
+scroll_active = false
