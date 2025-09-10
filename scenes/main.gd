@@ -11,6 +11,7 @@ extends Control
 const game_list_item_scene: PackedScene         = preload("res://scenes/game_list_item.tscn")
 var game_list_items: Array[GameListItem]        = []
 var game_list_selected_index: int               = 0
+var overlay_window: Window                      = null
 
 
 # On initialization, connect signals
@@ -36,13 +37,8 @@ func _physics_process(_delta: float) -> void:
 	elif Input.is_action_just_pressed("p1_right") or Input.is_action_just_pressed("p2_right"):
 		_move_selection(1)
 	elif Input.is_action_just_pressed("p1_start") or Input.is_action_just_pressed("p2_start"):
-		if game_list_items.size() > 0:
-			var selected_game: GameLibrary.Entry = game_list_items[game_list_selected_index].game
-			var executable_path: String          = GameLibrary.manifest.directory.path_join(selected_game.repo_owner).path_join(selected_game.repo_name).path_join(selected_game.executable)
-			print("Launching game: %s" % executable_path)
-			var err = OS.shell_open(executable_path)
-			if err != OK:
-				_show_error("Failed to launch game: %s" % executable_path)
+		if game_list_items.size() > game_list_selected_index:
+			_launch_game(game_list_items[game_list_selected_index].game)
 
 
 # After the manifest is loaded, update all games
@@ -110,3 +106,46 @@ func _move_selection(direction: int) -> void:
 func _update_selected() -> void:
 	for i in game_list_items.size():
 		game_list_items[i].set_selected(i == game_list_selected_index)
+
+
+# Launch the selected game
+func _launch_game(game: GameLibrary.Entry) -> void:
+	var executable_path: String = GameLibrary.manifest.directory.path_join(game.repo_owner).path_join(game.repo_name).path_join(game.executable)
+	print("Launching game: %s" % executable_path)
+	var err = OS.shell_open(executable_path)
+	if err != OK:
+		_show_error("Failed to launch game: %s" % executable_path)
+	await get_tree().create_timer(5.0).timeout
+	_show_overlay_window(_create_exit_instructions())
+
+
+# Show an overlay window with exit instructions
+func _show_overlay_window(window: Window) -> void:
+	if overlay_window != null:
+		overlay_window.queue_free()
+	overlay_window = window
+	overlay_window.transient = false
+	overlay_window.borderless = true
+	overlay_window.always_on_top = true
+	overlay_window.transparent = true
+	overlay_window.size = DisplayServer.screen_get_size()
+	call_deferred("add_child", overlay_window)
+
+
+# Create a window with exit instructions
+func _create_exit_instructions() -> Window:
+	var overlay             := Window.new()
+	var vbox: VBoxContainer =  VBoxContainer.new()
+	vbox.anchor_left = 0.0
+	vbox.anchor_top = 0.0
+	vbox.anchor_right = 0.0
+	vbox.anchor_bottom = 0.0
+	overlay.add_child(vbox)
+	var label: Label = Label.new()
+	label.text = "Press ESC to exit the game and return to the launcher."
+	label.anchor_left = 0.0
+	label.anchor_top = 0.0
+	label.anchor_right = 0.0
+	label.anchor_bottom = 0.0
+	vbox.add_child(label)
+	return overlay
