@@ -9,8 +9,11 @@ extends Control
 @onready var show_games_list: VBoxContainer = $ShowGames/ScrollContainer/VBoxContainer
 @onready var show_games_scroll: ScrollContainer = $ShowGames/ScrollContainer
 const game_list_item_scene: PackedScene         = preload("res://scenes/game_list_item.tscn")
+const in_game_overlay_scene: PackedScene        = preload("res://scenes/in_game_overlay.tscn")
 var game_list_items: Array[GameListItem]        = []
 var game_list_selected_index: int               = 0
+var overlay_window_left: Window                 = null
+var overlay_window_right: Window                = null
 
 
 # On initialization, connect signals
@@ -36,13 +39,8 @@ func _physics_process(_delta: float) -> void:
 	elif Input.is_action_just_pressed("p1_right") or Input.is_action_just_pressed("p2_right"):
 		_move_selection(1)
 	elif Input.is_action_just_pressed("p1_start") or Input.is_action_just_pressed("p2_start"):
-		if game_list_items.size() > 0:
-			var selected_game: GameLibrary.Entry = game_list_items[game_list_selected_index].game
-			var executable_path: String          = GameLibrary.manifest.directory.path_join(selected_game.repo_owner).path_join(selected_game.repo_name).path_join(selected_game.executable)
-			print("Launching game: %s" % executable_path)
-			var err = OS.shell_open(executable_path)
-			if err != OK:
-				_show_error("Failed to launch game: %s" % executable_path)
+		if game_list_items.size() > game_list_selected_index:
+			_launch_game(game_list_items[game_list_selected_index].game)
 
 
 # After the manifest is loaded, update all games
@@ -110,3 +108,59 @@ func _move_selection(direction: int) -> void:
 func _update_selected() -> void:
 	for i in game_list_items.size():
 		game_list_items[i].set_selected(i == game_list_selected_index)
+
+
+# Launch the selected game
+func _launch_game(game: GameLibrary.Entry) -> void:
+	var executable_path: String = GameLibrary.manifest.directory.path_join(game.repo_owner).path_join(game.repo_name).path_join(game.executable)
+	print("Launching game: %s" % executable_path)
+	# TODO launch game after we figure out the overlay stuff
+	var err = OS.shell_open(executable_path)
+	if err != OK:
+		_show_error("Failed to launch game: %s" % executable_path)
+	await get_tree().create_timer(Constants.IN_GAME_OVERLAY_DELAY_SEC).timeout
+	_show_in_game_overlays()
+	await get_tree().create_timer(Constants.IN_GAME_OVERLAY_DISPLAY_SEC).timeout
+	_hide_in_game_overlays()
+
+
+# Create a window with exit instructions
+# FUTURE: spawn separate windows for left and right side of screen
+func _show_in_game_overlays() -> void:
+	_hide_in_game_overlays()
+	var window_scale: float = float(DisplayServer.screen_get_size().y) / float(Constants.OVERLAY_BASE_HEIGHT)
+	# Create a new overlay window
+	overlay_window_left = _build_overlay_window(window_scale, true)
+	overlay_window_right = _build_overlay_window(window_scale, false)
+	call_deferred("add_child", overlay_window_left)
+	call_deferred("add_child", overlay_window_right)
+
+
+# Hide and free the overlay windows
+func _hide_in_game_overlays() -> void:
+	if overlay_window_left != null:
+		overlay_window_left.queue_free()
+		overlay_window_left = null
+	if overlay_window_right != null:
+		overlay_window_right.queue_free()
+		overlay_window_right = null
+
+
+# Build an overlay window with instructions
+func _build_overlay_window(window_scale: float, left_side: bool) -> Window:
+	var window = Window.new()
+	window.borderless = true
+	window.transient = false
+	window.unresizable = true
+	window.wrap_controls = true
+	window.transparent = true
+	window.always_on_top = true
+	window.size = Vector2(Constants.OVERLAY_BASE_WIDTH * window_scale, DisplayServer.screen_get_size().y)
+	window.position = Vector2(0.0 if left_side else DisplayServer.screen_get_size().x - Constants.OVERLAY_BASE_WIDTH * window_scale, 0)
+	# Determine scale relative to the base window size
+	var content: Node = in_game_overlay_scene.instantiate()
+	content.rotation_degrees = 90 if left_side else -90
+	content.scale = Vector2(window_scale, window_scale)
+	content.position = Vector2(Constants.OVERLAY_BASE_WIDTH * window_scale, 0) if left_side else Vector2(0, Constants.OVERLAY_BASE_HEIGHT * window_scale)
+	window.add_child(content)
+	return window
