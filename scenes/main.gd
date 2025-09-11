@@ -9,6 +9,7 @@ extends Control
 @onready var show_games_list: VBoxContainer = $ShowGames/ScrollContainer/VBoxContainer
 @onready var show_games_scroll: ScrollContainer = $ShowGames/ScrollContainer
 const game_list_item_scene: PackedScene         = preload("res://scenes/game_list_item.tscn")
+const in_game_overlay_scene: PackedScene        = preload("res://scenes/in_game_overlay.tscn")
 var game_list_items: Array[GameListItem]        = []
 var game_list_selected_index: int               = 0
 var overlay_window: Window                      = null
@@ -134,18 +135,7 @@ func _show_overlay_window(window: Window) -> void:
 
 # Create a window with exit instructions
 func _create_exit_instructions() -> Window:
-	var overlay             := Window.new()
-	var vbox: VBoxContainer =  VBoxContainer.new()
-	vbox.anchor_left = 0.0
-	vbox.anchor_top = 0.0
-	vbox.anchor_right = 0.0
-	vbox.anchor_bottom = 0.0
-	overlay.add_child(vbox)
-	var label: Label = Label.new()
-	label.text = "Press ESC to exit the game and return to the launcher."
-	label.anchor_left = 0.0
-	label.anchor_top = 0.0
-	label.anchor_right = 0.0
-	label.anchor_bottom = 0.0
-	vbox.add_child(label)
+	var overlay       := Window.new()
+	var content: Node =  in_game_overlay_scene.instantiate()
+	overlay.add_child(content)
 	return overlay
