@@ -1,12 +1,17 @@
 [gd_scene load_steps=2 format=3 uid="uid://cllofpbgqyiky"]
 
-[ext_resource type="Theme" uid="uid://0y1n83r4ol3" path="res://themes/main.tres" id="1_6koj1"]
+[ext_resource type="Theme" uid="uid://cp81d84l4kw87" path="res://themes/overlay.tres" id="1_6koj1"]
 
 [node name="InGameOverlay" type="Control"]
 layout_mode = 3
 anchors_preset = 0
-offset_right = 2560.0
-offset_bottom = 1440.0
+offset_right = 1440.0
+offset_bottom = 200.0
+
+[node name="ColorRect" type="ColorRect" parent="."]
+layout_mode = 0
+offset_right = 1440.0
+offset_bottom = 200.0
 
 [node name="VBoxContainer" type="VBoxContainer" parent="."]
 layout_mode = 1
@@ -20,5 +25,8 @@ grow_vertical = 2
 layout_mode = 2
 size_flags_vertical = 3
 theme = ExtResource("1_6koj1")
-theme_override_font_sizes/normal_font_size = 100
-text = "THIS IS AN OVERLAY"
+theme_override_colors/default_color = Color(0, 0, 0, 1)
+bbcode_enabled = true
+text = "HOLD [b]START[/b] + [b]TABLE[/b] BUTTONS TO EXIT"
+horizontal_alignment = 1
+vertical_alignment = 1

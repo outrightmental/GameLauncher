@@ -113,29 +113,41 @@ func _update_selected() -> void:
 func _launch_game(game: GameLibrary.Entry) -> void:
 	var executable_path: String = GameLibrary.manifest.directory.path_join(game.repo_owner).path_join(game.repo_name).path_join(game.executable)
 	print("Launching game: %s" % executable_path)
+	# TODO launch game after we figure out the overlay stuff
 	var err = OS.shell_open(executable_path)
 	if err != OK:
 		_show_error("Failed to launch game: %s" % executable_path)
-	await get_tree().create_timer(5.0).timeout
-	_show_overlay_window(_create_exit_instructions())
-
-
-# Show an overlay window with exit instructions
-func _show_overlay_window(window: Window) -> void:
-	if overlay_window != null:
-		overlay_window.queue_free()
-	overlay_window = window
-	overlay_window.transient = false
-	overlay_window.borderless = true
-	overlay_window.always_on_top = true
-	overlay_window.transparent = true
-	overlay_window.size = DisplayServer.screen_get_size()
-	call_deferred("add_child", overlay_window)
+	await get_tree().create_timer(Constants.IN_GAME_OVERLAY_DELAY_SEC).timeout
+	_show_in_game_overlay()
+	await get_tree().create_timer(Constants.IN_GAME_OVERLAY_DISPLAY_SEC).timeout
+	_hide_in_game_overlay()
 
 
 # Create a window with exit instructions
-func _create_exit_instructions() -> Window:
-	var overlay       := Window.new()
-	var content: Node =  in_game_overlay_scene.instantiate()
-	overlay.add_child(content)
-	return overlay
+# FUTURE: spawn separate windows for left and right side of screen
+func _show_in_game_overlay() -> void:
+	_hide_in_game_overlay()
+	var window_scale: float = float(DisplayServer.screen_get_size().y) / float(Constants.WINDOW_BASE_HEIGHT)
+	# Create a new overlay window
+	overlay_window       = Window.new()
+	overlay_window.borderless = true
+	overlay_window.transient = false
+	overlay_window.unresizable = true
+	overlay_window.wrap_controls = true
+	overlay_window.transparent = true
+	overlay_window.always_on_top = true
+	overlay_window.size = Vector2(Constants.IN_GAME_OVERLAY_WIDTH * window_scale, DisplayServer.screen_get_size().y)
+	overlay_window.position = Vector2(0, 0)
+	# Determine scale relative to the base window size
+	var content: Node = in_game_overlay_scene.instantiate()
+	content.rotation_degrees = 90
+	content.scale = Vector2(window_scale, window_scale)
+	content.position = Vector2(Constants.IN_GAME_OVERLAY_WIDTH * window_scale, 0)
+	overlay_window.add_child(content)
+	call_deferred("add_child", overlay_window)
+
+	
+func _hide_in_game_overlay() -> void:
+	if overlay_window != null:
+		overlay_window.queue_free()
+		overlay_window = null
