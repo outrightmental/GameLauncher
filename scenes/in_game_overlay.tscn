@@ -1,0 +1,24 @@
+[gd_scene load_steps=2 format=3 uid="uid://cllofpbgqyiky"]
+
+[ext_resource type="Theme" uid="uid://0y1n83r4ol3" path="res://themes/main.tres" id="1_6koj1"]
+
+[node name="InGameOverlay" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 2560.0
+offset_bottom = 1440.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="RichTextLabel" type="RichTextLabel" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme = ExtResource("1_6koj1")
+theme_override_font_sizes/normal_font_size = 100
+text = "THIS IS AN OVERLAY"
