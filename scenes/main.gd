@@ -123,6 +123,8 @@ func _show_error(message: String) -> void:
 	show_error_console.text += message + "\n"
 	if not show_error_container.is_visible():
 		show_error_container.show()
+		await Util.delay(Constants.ERROR_DISPLAY_TIMEOUT_SEC)
+		show_error_container.hide()
 	pass
 
 
