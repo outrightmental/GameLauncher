@@ -8,12 +8,26 @@ extends Control
 @onready var show_games_container: PanelContainer = $ShowGames
 @onready var show_games_list: VBoxContainer = $ShowGames/ScrollContainer/VBoxContainer
 @onready var show_games_scroll: ScrollContainer = $ShowGames/ScrollContainer
+@onready var show_launching_container: Control = $ShowLaunching
 const game_list_item_scene: PackedScene         = preload("res://scenes/game_list_item.tscn")
 const in_game_overlay_scene: PackedScene        = preload("res://scenes/in_game_overlay.tscn")
 var game_list_items: Array[GameListItem]        = []
 var game_list_selected_index: int               = 0
 var overlay_window_left: Window                 = null
 var overlay_window_right: Window                = null
+
+var running_pid: int                            = -1
+enum State {
+	INITIALIZING,
+	MANIFEST_LOADED,
+	MANIFEST_ERROR,
+	SHOW_GAME_LIBRARY,
+	GAME_UPDATE_ERROR,
+	RUNNING_GAME,
+	ERROR_LAUNCHING_GAME,
+}
+var state: State = State.INITIALIZING
+signal _on_state_changed()
 
 
 # On initialization, connect signals
@@ -30,6 +44,13 @@ func _ready() -> void:
 	show_error_container.hide()
 	show_update_container.hide()
 	show_games_container.hide()
+	show_launching_container.hide()
+	
+	
+func _update_state(new_state: State) -> void:
+	if state != new_state:
+		state = new_state
+		_on_state_changed.emit()
 
 
 # Handle input events
@@ -43,13 +64,39 @@ func _physics_process(_delta: float) -> void:
 			_launch_game(game_list_items[game_list_selected_index].game)
 
 
+# Launch the selected game and store the process ID
+func _launch_game(game: GameLibrary.Entry) -> void:
+	if state == State.RUNNING_GAME:
+		print("A game is already running with PID: %d" % running_pid)
+		return
+	_update_state(State.RUNNING_GAME)
+	show_games_container.hide()
+	show_launching_container.show()
+	# Construct the executable path
+	var executable_path: String = GameLibrary.manifest.directory.path_join(game.repo_owner).path_join(game.repo_name).path_join(game.executable)
+	print("Launching game: %s" % executable_path)
+	running_pid = OS.create_process(executable_path, [])
+	if running_pid == -1:
+		_show_error("Failed to launch game: %s" % game.title)
+		_update_state(State.ERROR_LAUNCHING_GAME)
+		return
+	print("Launched game with PID: %d" % running_pid)
+	# Wait N seconds
+	await Util.delay(Constants.GAME_LAUNCH_TIMEOUT_SEC)
+	show_games_container.show()
+	show_launching_container.hide()
+	_update_state(State.SHOW_GAME_LIBRARY)
+
+
 # After the manifest is loaded, update all games
 func _on_manifest_loaded() -> void:
+	_update_state(State.MANIFEST_LOADED)
 	GameUpdater.update_all_games()
 
 
 # After all games are updated, display the collection and game details
 func _on_all_games_updated() -> void:
+	_update_state(State.SHOW_GAME_LIBRARY)
 	if show_update_container.is_visible():
 		show_update_container.hide()
 	if not show_games_container.is_visible():
@@ -65,11 +112,13 @@ func _on_all_games_updated() -> void:
 
 # Handle manifest loading errors
 func _on_manifest_error(message: String) -> void:
+	_update_state(State.MANIFEST_ERROR)
 	_show_error("[Manifest] %s" % message)
 
 
 # Handle manifest loading errors
 func _on_game_update_error(message: String) -> void:
+	_update_state(State.GAME_UPDATE_ERROR)
 	_show_error("[GameUpdate] %s" % message)
 
 
@@ -78,6 +127,8 @@ func _show_error(message: String) -> void:
 	show_error_console.text += message + "\n"
 	if not show_error_container.is_visible():
 		show_error_container.show()
+		await Util.delay(Constants.ERROR_DISPLAY_TIMEOUT_SEC)
+		show_error_container.hide()
 	pass
 
 
