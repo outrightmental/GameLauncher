@@ -22,6 +22,8 @@
     {
       "repo_owner": "outrightmental",
       "repo_name": "Blockbusters",
+      "repo_token": "ghp_your_token_here",
+      "repo_artifact_filter": "Noisebridge",
       "title": "Blockbusters",
       "executable": "Blockbusters.exe",
       "developers": [

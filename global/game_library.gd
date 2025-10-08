@@ -41,6 +41,8 @@ class Entry extends RefCounted:
 	var description := ""
 	var repo_owner := ""
 	var repo_name := ""
+	var repo_token := ""  # Option to use GitHub token in manifest for private repos #25
+	var repo_artifact_filter := "" # Option to filter artifacts by name (substring match) #26
 
 
 # Prefer a manifest next to the executable (for packaged builds),
@@ -145,6 +147,8 @@ func _load_manifest(manifest_path: String) -> void:
 		entry.description = _get_required_from_data(game_data, "description", "")
 		entry.repo_owner = _get_required_from_data(game_data, "repo_owner", "")
 		entry.repo_name = _get_required_from_data(game_data, "repo_name", "")
+		entry.repo_token = _get_optional_from_data(game_data, "repo_token", "")
+		entry.repo_artifact_filter = _get_optional_from_data(game_data, "repo_artifact_filter", "")
 		manifest.games.append(entry)
 	manifest_loaded.emit()
 
@@ -153,6 +157,12 @@ func _load_manifest(manifest_path: String) -> void:
 func _get_required_from_data(data: Dictionary, key: String, default: Variant) -> Variant:
 	if not data.has(key):
 		manifest_error.emit("Game entry %s is missing required key: %s" % [data, key])
+	return _get_optional_from_data(data, key, default)
+
+
+# Helper to get a optional key from a dictionary
+func _get_optional_from_data(data: Dictionary, key: String, default: Variant) -> Variant:
+	if not data.has(key):
 		return default
 	return data[key]
 
