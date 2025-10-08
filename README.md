@@ -28,6 +28,23 @@ By default, the Game Launcher will look for the **games.json** file in the same 
 
 You can also place a **games.json** file in the default user home location, which is `C:\Users\<username>\Documents\GameLibrary\games.json`.
 
+#### Installing from a private repository
+
+If you want to install games from a private repository, you'll need to provide a GitHub Personal Access Token (PAT) with read access to the following scopes:
+
+- **Metadata**
+- **Actions**
+- **Contents**
+
+You can create a PAT by following the instructions [here](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token).
+
+Once you have created the PAT, you will include it in your [Game Library Manifest JSON file](#game-library-manifest-json-file) in the `repo_token` field.
+
+#### Installing a specific artifact
+
+You can specify a specific artifact to download from the artifacts available in the latest release by using the `repo_artifact_filter` field in the [Game Library Manifest JSON file](#game-library-manifest-json-file).
+
+This value will be used as a case-insensitive substring filter against the artifact names in the latest release.
 
 ## Continuous Integration
 

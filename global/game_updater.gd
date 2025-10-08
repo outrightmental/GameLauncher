@@ -10,13 +10,7 @@ extends Node
 # ------------------------------------------------------------
 
 # --- Optional: set a GitHub token to avoid harsh rate limits (60/hr unauth'd).
-var GITHUB_TOKEN: String =  OS.get_environment("GITHUB_TOKEN")
 const API_BASE           := "https://api.github.com"
-const GH_HEADERS         := [
-							"User-Agent: GodotGameLauncher",
-							"Accept: application/vnd.github+json",
-							"X-GitHub-Api-Version: 2022-11-28"
-							]
 signal game_update_message(message: String)
 signal game_update_progress(progress: float)
 signal all_games_updated()
@@ -50,11 +44,6 @@ func update_all_games() -> void:
 # This will download the latest release and extract it to the specified folder.
 #
 func _update_game(game: GameLibrary.Entry) -> void:
-	# Prepare GitHub HTTP headers
-	var headers := GH_HEADERS.duplicate()
-	if GITHUB_TOKEN.strip_edges() != "":
-		headers.append("Authorization: Bearer %s" % GITHUB_TOKEN)
-
 	# Ensure folder exists
 	var game_folder = GameLibrary.get_absolute_path_to_game_folder(game)
 	_make_dir_recursive_abs(game_folder)
@@ -69,7 +58,7 @@ func _update_game(game: GameLibrary.Entry) -> void:
 
 	# Get latest release info
 	var url     := "%s/repos/%s/%s/releases/latest" % [API_BASE, game.repo_owner, game.repo_name]
-	var release =  await _get_json(url, headers)
+	var release =  await _get_json(url, _build_headers(game.repo_token))
 	if typeof(release) != TYPE_DICTIONARY:
 		game_update_error.emit("Failed to get release for %s/%s" % [game.repo_owner, game.repo_name])
 		return
@@ -96,7 +85,11 @@ func _update_game(game: GameLibrary.Entry) -> void:
 	var assets    =  release.get("assets", [])
 	var zip_asset := {}
 	for a in assets:
-		if typeof(a) == TYPE_DICTIONARY and str(a.get("name", "")).to_lower().ends_with(".zip"):
+		var asset_name := str(a.get("name", "")).to_lower()
+		if typeof(a) == TYPE_DICTIONARY and asset_name.ends_with(".zip"):
+			if game.repo_artifact_filter.strip_edges() != "":
+				if not asset_name.findn(game.repo_artifact_filter.to_lower()) >= 0:
+					continue
 			zip_asset = a
 			break
 	if zip_asset.is_empty():
@@ -104,10 +97,10 @@ func _update_game(game: GameLibrary.Entry) -> void:
 		return
 
 	# Prepare to download zip
-	var zip_url  := str(zip_asset.get("browser_download_url", ""))
+	var zip_url  := str(zip_asset.get("url", ""))
 	var zip_name := str(zip_asset.get("name", "game.zip"))
 	if zip_url == "":
-		game_update_error.emit("Error: asset has no browser_download_url")
+		game_update_error.emit("Error: asset has no url")
 		return
 	var zip_path := game_folder.path_join(zip_name)
 
@@ -118,16 +111,16 @@ func _update_game(game: GameLibrary.Entry) -> void:
 	# Download the zip file
 	downloading_http     = _get_http()
 	downloading_http.download_file = zip_path
-	var err := downloading_http.request(zip_url, _full_headers(headers))
+	var err := downloading_http.request(zip_url, _build_headers(game.repo_token, true))
 	if err != OK:
-		game_update_error.emit( "HTTP request failed with error %d for URL: %s headers: %s" % [err, url, headers])
+		game_update_error.emit( "HTTP request failed with error %d for URL: %s" % [err, url])
 		return
 	var result = await downloading_http.request_completed
 	downloading_http.queue_free()
 	var resp_code: int                  = result[1]
 	var resp_headers: PackedStringArray = result[2]
 	if resp_code < 200 or resp_code >= 300:
-		game_update_error.emit("HTTP request failed with code %d headers %s for URL: %s headers: %s" % [resp_code, resp_headers, url, headers])
+		game_update_error.emit("HTTP request failed with code %d headers %s for URL: %s " % [resp_code, resp_headers, url, ])
 		return
 
 	if not FileAccess.file_exists(zip_path):
@@ -164,18 +157,24 @@ func _physics_process(_delta: float) -> void:
 # -----------------------------------------------------------
 # HTTP helpers
 # -----------------------------------------------------------
-func _full_headers(custom: Array) -> PackedStringArray:
-	var out: PackedStringArray = []
-	for h in custom:
-		out.append(str(h))
-	return out
+func _build_headers(token: String = "", get_binary: bool = false) -> PackedStringArray:
+	var headers: PackedStringArray = []
+	headers.append("User-Agent: GodotGameLauncher")
+	headers.append("X-GitHub-Api-Version: 2022-11-28")
+	if (get_binary):
+		headers.append("Accept: application/octet-stream")
+	else:
+		headers.append("Accept: application/vnd.github.v3+json")
+	if token.strip_edges() != "":
+		headers.append("Authorization: Bearer %s" % token)
+	return headers
 
 
 # Get JSON from URL with headers
 # Returns parsed JSON data or null on error
-func _get_json(url: String, headers: Array) -> Variant:
+func _get_json(url: String, headers: PackedStringArray) -> Variant:
 	var http := _get_http()
-	var err  := http.request(url, _full_headers(headers))
+	var err  := http.request(url, headers)
 	if err != OK:
 		game_update_error.emit( "HTTP request failed with error %d for URL: %s headers: %s" % [err, url, headers])
 		return null

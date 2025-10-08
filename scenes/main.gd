@@ -108,12 +108,14 @@ func _on_all_games_updated() -> void:
 
 # Handle manifest loading errors
 func _on_manifest_error(message: String) -> void:
+	push_error(message)
 	_update_state(State.MANIFEST_ERROR)
 	_show_error("[Manifest] %s" % message)
 
 
 # Handle manifest loading errors
 func _on_game_update_error(message: String) -> void:
+	push_error(message)
 	_update_state(State.GAME_UPDATE_ERROR)
 	_show_error("[GameUpdate] %s" % message)
 
