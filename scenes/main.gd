@@ -81,8 +81,12 @@ func _launch_game(game: GameLibrary.Entry) -> void:
 		_update_state(State.ERROR_LAUNCHING_GAME)
 		return
 	print("Launched game with PID: %d" % running_pid)
+	await get_tree().create_timer(Constants.IN_GAME_OVERLAY_DELAY_SEC).timeout
+	_show_in_game_overlays()
+	await get_tree().create_timer(Constants.IN_GAME_OVERLAY_DISPLAY_SEC).timeout
+	_hide_in_game_overlays()
 	# Wait N seconds
-	await Util.delay(Constants.GAME_LAUNCH_TIMEOUT_SEC)
+	await Util.delay(Constants.GAME_LAUNCH_TIMEOUT_SEC - Constants.IN_GAME_OVERLAY_DELAY_SEC - Constants.IN_GAME_OVERLAY_DISPLAY_SEC)
 	show_games_container.show()
 	show_launching_container.hide()
 	_update_state(State.SHOW_GAME_LIBRARY)
@@ -159,20 +163,6 @@ func _move_selection(direction: int) -> void:
 func _update_selected() -> void:
 	for i in game_list_items.size():
 		game_list_items[i].set_selected(i == game_list_selected_index)
-
-
-# Launch the selected game
-func _launch_game(game: GameLibrary.Entry) -> void:
-	var executable_path: String = GameLibrary.manifest.directory.path_join(game.repo_owner).path_join(game.repo_name).path_join(game.executable)
-	print("Launching game: %s" % executable_path)
-	# TODO launch game after we figure out the overlay stuff
-	var err = OS.shell_open(executable_path)
-	if err != OK:
-		_show_error("Failed to launch game: %s" % executable_path)
-	await get_tree().create_timer(Constants.IN_GAME_OVERLAY_DELAY_SEC).timeout
-	_show_in_game_overlays()
-	await get_tree().create_timer(Constants.IN_GAME_OVERLAY_DISPLAY_SEC).timeout
-	_hide_in_game_overlays()
 
 
 # Create a window with exit instructions
