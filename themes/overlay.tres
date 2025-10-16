@@ -1,0 +1,14 @@
+[gd_resource type="Theme" load_steps=3 format=3 uid="uid://cp81d84l4kw87"]
+
+[ext_resource type="FontFile" uid="uid://bk42n0t43ffy2" path="res://assets/fonts/Montserrat/static/Montserrat-ExtraBold.ttf" id="1_pskwe"]
+[ext_resource type="FontFile" uid="uid://vcvw424a0cqr" path="res://assets/fonts/Montserrat/static/Montserrat-SemiBold.ttf" id="2_vigmq"]
+
+[resource]
+default_font = ExtResource("2_vigmq")
+default_font_size = 16
+RichTextLabel/font_sizes/bold_font_size = 55
+RichTextLabel/font_sizes/bold_italics_font_size = 55
+RichTextLabel/font_sizes/italics_font_size = 55
+RichTextLabel/font_sizes/mono_font_size = 55
+RichTextLabel/font_sizes/normal_font_size = 55
+RichTextLabel/fonts/bold_font = ExtResource("1_pskwe")
